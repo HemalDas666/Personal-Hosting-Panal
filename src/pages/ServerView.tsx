@@ -12,10 +12,11 @@ import ServerProperties from "../components/ServerProperties";
 import ServerBackups from "../components/ServerBackups";
 import PluginManager from "../components/PluginManager";
 import ModManager from "../components/ModManager";
+import MapsManager from "../components/MapsManager";
 import SubUsersManager from "../components/SubUsersManager";
 import ServerSFTP from "../components/ServerSFTP";
 import PlayitTunnel from "./PlayitTunnel";
-import { Puzzle, Box, Network } from "lucide-react";
+import { Puzzle, Box, Network, Map } from "lucide-react";
 import { Settings, Globe } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 
@@ -106,6 +107,7 @@ export default function ServerView() {
   }
 
   tabs.push(
+    { name: "Maps", path: `/servers/${id}/maps`, exactPath: "maps", icon: <Map size={18} /> },
     { name: "Settings", path: `/servers/${id}/settings`, exactPath: "settings", icon: <Settings size={18} /> },
     { name: "Backup", path: `/servers/${id}/backup`, exactPath: "backup", icon: <Archive size={18} /> }
   );
@@ -300,6 +302,7 @@ export default function ServerView() {
              <Route path="/backup" element={<ServerBackups serverId={id!} />} />
              <Route path="/plugins" element={<PluginManager serverId={id!} />} />
              <Route path="/mods" element={<ModManager serverId={id!} />} />
+             <Route path="/maps" element={<MapsManager serverId={id!} />} />
              {enablePlayit && <Route path="/playit" element={<PlayitTunnel serverId={id!} />} />}
            </Routes>
         </div>

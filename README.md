@@ -1,49 +1,27 @@
-# Hemal's Host Panel
+# Personal Hosting Panel
 
-Made by Hemal
+Made by **Hemal** — Blue ✦ Cyan ✦ Purple ✦ Lime
 
-A web-based game server management panel with file manager, terminal access, and playit.gg integration.
+A web-based game server management panel with file manager, terminal, maps manager, mod/plugin support, backups, and playit.gg integration.
 
 ## Quick Install (Linux)
 
-Run this one-liner on your VPS/server:
-
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/HemalDas666/Hemals-Hosting-Panal/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/HemalDas666/Personal-Hosting-Panal/main/install.sh)
 ```
 
 ## Manual Installation
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/HemalDas666/Hemals-Hosting-Panal.git
-cd 
-Hemals-Hosting-Panal
+git clone https://github.com/HemalDas666/Personal-Hosting-Panal.git
+cd Personal-Hosting-Panal
+npm install
+npm run build
+npm run createuser
+npm run start
 ```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Build the application:
-   ```bash
-   npm run build
-   ```
-
-4. Create an admin user:
-   ```bash
-   npm run createuser
-   ```
-
-5. Start the server:
-   ```bash
-   npm run start
-   ```
-
 ## Development
-
-To run the panel in development mode with auto-reloading:
 
 ```bash
 npm run dev
@@ -52,4 +30,5 @@ npm run dev
 ## Requirements
 
 - Node.js 20+
+- Docker (for server containers)
 - A Linux VPS (Ubuntu/Debian recommended)
