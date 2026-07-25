@@ -325,12 +325,9 @@ export default function ServerView() {
                   <AlertTriangle className="w-6 h-6 text-red-500" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-1">High RAM Allocation</h3>
+                  <h3 className="text-xl font-bold text-white mb-1">Experimental Panel</h3>
                   <p className="text-zinc-400 text-sm leading-relaxed">
-                    This instance is configured to use up to <strong className="text-white">{server?.ram}GB</strong> of RAM, but this system only has <strong className="text-white">{totalSystemRam.toFixed(1)}GB</strong> physically available. 
-                  </p>
-                  <p className="text-zinc-400 text-sm leading-relaxed mt-2">
-                    The container uses memory on-demand, but if actual memory usage exceeds the host's physical RAM, the server will crash/be terminated by the OS.
+                    It's an Experimental Hosting Panel and it's new so please Cooperate with us.
                   </p>
                 </div>
               </div>
@@ -348,7 +345,7 @@ export default function ServerView() {
                   }}
                   className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold rounded-xl transition-colors border border-red-500/30"
                 >
-                  Start Anyway
+                  I Understand
                 </button>
               </div>
             </motion.div>
