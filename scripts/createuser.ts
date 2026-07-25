@@ -15,7 +15,7 @@ const rl = readline.createInterface({
 fs.ensureDirSync(DATA_DIR);
 if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, "[]");
 
-console.log("=== Hemal's Panel Admin User Creation ===");
+console.log("=== Hemals Hosting Panal Admin User Creation ===");
 
 rl.question("Username: ", async (username) => {
   rl.question("Password: ", async (password) => {

@@ -96,7 +96,7 @@ async function startServer() {
   }
 
   httpServer.listen(PORT, () => {
-    console.log(`Hemal's Panel running on port ${PORT}`);
+    console.log(`Hemals Hosting Panal running on port ${PORT}`);
   });
 }
 

@@ -1,5 +1,5 @@
 {
-  "name": "Hemal's Panel",
+  "name": "Hemals Hosting Panal",
   "description": "A web-based game server management panel with file manager, terminal access, and playit.gg integration.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

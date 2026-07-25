@@ -39,7 +39,7 @@ typewriter() {
     echo ""
 }
 
-typewriter "Welcome to Hemal's Hosting Panel" "${GREEN}${BOLD}"
+typewriter "Welcome to Hemals Hosting Panal" "${GREEN}${BOLD}"
 sleep 0.3
 typewriter "The ultimate game server management solution" "${CYAN}"
 sleep 0.5

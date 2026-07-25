@@ -18,8 +18,8 @@ router.use("/nodes", nodeRoutes);
 router.get("/settings", async (req, res) => {
   const settings = await readJSON("settings.json") || {};
   res.json({ 
-    panelName: settings.panelName || "Hemal's Panel",
-    panelLogo: settings.panelLogo || "",
+    panelName: settings.panelName || "Hemals Hosting Panal",
+    panelLogo: settings.panelLogo || "https://th.bing.com/th/id/OIG2.MSeH3MjZRxdN1lVl2W3R?w=1248&h=832&qlt=70&p=0&r=0&o=4&pid=ImgGn",
     panelBackgroundImage: settings.panelBackgroundImage || "",
     panelBackgroundBlur: settings.panelBackgroundBlur !== undefined ? settings.panelBackgroundBlur : 10,
     enablePlayit: settings.enablePlayit !== undefined ? settings.enablePlayit : false,
