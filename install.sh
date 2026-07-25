@@ -102,15 +102,15 @@ install_panel() {
     echo -e "${CYAN}╚══════════════════════════════════════════════╝${NC}"
     echo -e ""
     
-    if [ -d "Hemals_Host_Panal" ]; then
-        echo -e "${YELLOW}[!] The 'Hemals_Host_Panal' folder already exists. Please delete it first or use the update option.${NC}"
+    if [ -d "Personal-Hosting-Panal" ]; then
+        echo -e "${YELLOW}[!] The 'Personal-Hosting-Panal' folder already exists. Please delete it first or use the update option.${NC}"
         return
     fi
 
     echo -e "${CYAN}[+] Cloning repository...${NC}"
-    git clone https://github.com/HemalDas666/Hemals-Hosting-Panal.git Hemals_Host_Panal
+    git clone https://github.com/HemalDas666/Personal-Hosting-Panal.git
     
-    cd Hemals_Host_Panal || { echo -e "${RED}[!] Failed to enter the directory!${NC}"; return; }
+    cd Personal-Hosting-Panal || { echo -e "${RED}[!] Failed to enter the directory!${NC}"; return; }
     
     echo -e ""
     echo -e "${GREEN}[✓] Repository cloned successfully!${NC}"
@@ -148,8 +148,8 @@ update_panel() {
     echo -e "${CYAN}╚══════════════════════════════════════════════╝${NC}"
     echo -e ""
     
-    if [ -d "Hemals_Host_Panal" ]; then
-        cd Hemals_Host_Panal || { echo -e "${RED}[!] Failed to enter the directory!${NC}"; return; }
+    if [ -d "Personal-Hosting-Panal" ]; then
+        cd Personal-Hosting-Panal || { echo -e "${RED}[!] Failed to enter the directory!${NC}"; return; }
         
         echo -e "${YELLOW}[+] Fetching latest updates...${NC}"
         git stash
@@ -170,7 +170,7 @@ update_panel() {
         
         cd ..
     else
-        echo -e "${RED}[!] 'Hemals_Host_Panal' directory not found! Please install the panel first.${NC}"
+        echo -e "${RED}[!] 'Personal-Hosting-Panal' directory not found! Please install the panel first.${NC}"
     fi
 }
 
@@ -192,7 +192,7 @@ uninstall_panel() {
     
     echo -e "${RED}[+] Removing directory...${NC}"
     cd ..
-    rm -rf Hemals_Host_Panal
+    rm -rf Personal-Hosting-Panal
     
     echo -e ""
     echo -e "${RED}[✓] Panel has been removed.${NC}"
