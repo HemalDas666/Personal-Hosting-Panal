@@ -9,7 +9,7 @@ export default function ServerLiveStats({ serverId, limitRam, status }: { server
     const fetchStats = async () => {
       try {
         const res = await axios.get(`/api/servers/${serverId}/stats`);
-        setLiveRam(res.data.ram); // RAM is in MB
+        setLiveRam(res.data.ram);
       } catch(e) {}
     };
     fetchStats();

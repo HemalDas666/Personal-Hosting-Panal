@@ -123,9 +123,18 @@ export default function Dashboard() {
                       <div className="flex items-center gap-2 mt-1.5">
                         <span className="flex h-2.5 w-2.5 relative">
                           {server.status === 'online' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-                          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${server.status === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-zinc-600'}`}></span>
+                          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                            server.status === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' :
+                            server.status === 'installing' || server.status === 'starting' ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]' :
+                            'bg-zinc-600'
+                          }`}></span>
                         </span>
-                        <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{server.status}</p>
+                        <p className={`text-xs font-bold uppercase tracking-widest ${
+                          server.status === 'online' ? 'text-emerald-500' :
+                          server.status === 'installing' || server.status === 'starting' ? 'text-cyan-500' :
+                          server.status === 'suspended' ? 'text-red-400' :
+                          'text-zinc-500'
+                        }`}>{server.status === 'installing' ? 'Installing' : server.status === 'starting' ? 'Starting' : server.status === 'stopping' ? 'Stopping' : server.status === 'crashed' || server.status === 'suspended' ? 'Stopped' : server.status === 'online' ? 'Online' : 'Offline'}</p>
                       </div>
                     </div>
                   </div>

@@ -163,9 +163,24 @@ export default function ServerView() {
              <div className="flex items-center space-x-2 mb-3">
                 <span className="flex h-2 w-2 relative shrink-0">
                    {server.status === 'online' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-                   <span className={`relative inline-flex rounded-full h-2 w-2 ${server.status === 'online' ? 'bg-emerald-500' : 'bg-zinc-600'}`}></span>
+                   {server.status === 'starting' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>}
+                   <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                     server.status === 'online' ? 'bg-emerald-500' :
+                     server.status === 'installing' || server.status === 'starting' ? 'bg-cyan-500' :
+                     'bg-zinc-600'
+                   }`}></span>
                 </span>
-                <span className="text-xs font-medium text-zinc-300 capitalize">{server.status}</span>
+                <span className={`text-xs font-medium capitalize ${
+                  server.status === 'online' ? 'text-emerald-400' :
+                  server.status === 'installing' || server.status === 'starting' ? 'text-cyan-400' :
+                  'text-zinc-300'
+                }`}>{
+                  server.status === 'installing' ? 'Installing' :
+                  server.status === 'starting' ? 'Starting' :
+                  server.status === 'stopping' ? 'Stopping' :
+                  server.status === 'crashed' || server.status === 'suspended' ? 'Stopped' :
+                  server.status === 'online' ? 'Online' : 'Offline'
+                }</span>
                 <span className="text-xs text-zinc-600">•</span>
                 <button onClick={handleCopyIp} className="flex items-center space-x-1.5 px-1.5 py-0.5 rounded-md hover:bg-white/10 transition-colors group cursor-pointer truncate" title="Copy Connection Info">
                   <span className="text-[11px] font-mono text-zinc-400 group-hover:text-zinc-300 transition-colors truncate">
@@ -251,9 +266,16 @@ export default function ServerView() {
             <div className="flex md:hidden items-center space-x-2 shrink-0">
                <span className="flex h-2 w-2 relative shrink-0">
                   {server.status === 'online' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-                  <span className={`relative inline-flex rounded-full h-2 w-2 ${server.status === 'online' ? 'bg-emerald-500' : 'bg-zinc-600'}`}></span>
+                  {server.status === 'starting' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>}
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${server.status === 'online' ? 'bg-emerald-500' : server.status === 'installing' || server.status === 'starting' ? 'bg-cyan-500' : 'bg-zinc-600'}`}></span>
                </span>
-               <span className="text-xs font-medium text-zinc-400 capitalize flex">{server.status}</span>
+               <span className={`text-xs font-medium capitalize flex ${server.status === 'online' ? 'text-emerald-400' : server.status === 'installing' || server.status === 'starting' ? 'text-cyan-400' : 'text-zinc-400'}`}>{
+                  server.status === 'installing' ? 'Installing' :
+                  server.status === 'starting' ? 'Starting' :
+                  server.status === 'stopping' ? 'Stopping' :
+                  server.status === 'crashed' || server.status === 'suspended' ? 'Stopped' :
+                  server.status === 'online' ? 'Online' : 'Offline'
+               }</span>
             </div>
           </div>
           
@@ -266,11 +288,18 @@ export default function ServerView() {
              </button>
              <div className="hidden md:block w-px h-5 bg-white/10" />
              <div className="hidden md:flex items-center space-x-2 shrink-0">
-                <span className="flex h-2 w-2 relative shrink-0">
-                   {server.status === 'online' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-                   <span className={`relative inline-flex rounded-full h-2 w-2 ${server.status === 'online' ? 'bg-emerald-500' : 'bg-zinc-600'}`}></span>
-                </span>
-                <span className="text-xs font-medium text-zinc-400 capitalize flex">{server.status}</span>
+               <span className="flex h-2 w-2 relative shrink-0">
+                  {server.status === 'online' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                  {server.status === 'starting' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>}
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${server.status === 'online' ? 'bg-emerald-500' : server.status === 'installing' || server.status === 'starting' ? 'bg-cyan-500' : 'bg-zinc-600'}`}></span>
+               </span>
+               <span className={`text-xs font-medium capitalize flex ${server.status === 'online' ? 'text-emerald-400' : server.status === 'installing' || server.status === 'starting' ? 'text-cyan-400' : 'text-zinc-400'}`}>{
+                  server.status === 'installing' ? 'Installing' :
+                  server.status === 'starting' ? 'Starting' :
+                  server.status === 'stopping' ? 'Stopping' :
+                  server.status === 'crashed' || server.status === 'suspended' ? 'Stopped' :
+                  server.status === 'online' ? 'Online' : 'Offline'
+               }</span>
              </div>
                 
              <div className="flex items-center space-x-1 sm:space-x-2 shrink-0 ml-auto md:ml-1">

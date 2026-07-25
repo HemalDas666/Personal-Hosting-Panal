@@ -44,19 +44,24 @@ export const createServerContainer = async (serverData: any) => {
     ? "itzg/bungeecord" 
     : "itzg/minecraft-server";
 
-  // Pull image if not exists
-  console.log(`Ensuring ${dockerImage} is pulled...`);
-  await new Promise((resolve, reject) => {
-    docker.pull(dockerImage, (err: any, stream: any) => {
-      if (err) return reject(err);
-      docker.modem.followProgress(stream, onFinished, onProgress);
-      function onFinished(err: any, output: any) {
+  // Check if image exists locally before pulling
+  try {
+    await docker.getImage(dockerImage).inspect();
+    console.log(`Image ${dockerImage} found locally, skipping pull.`);
+  } catch {
+    console.log(`Pulling ${dockerImage}...`);
+    await new Promise((resolve, reject) => {
+      docker.pull(dockerImage, (err: any, stream: any) => {
         if (err) return reject(err);
-        resolve(output);
-      }
-      function onProgress(event: any) {}
+        docker.modem.followProgress(stream, onFinished, onProgress);
+        function onFinished(err: any, output: any) {
+          if (err) return reject(err);
+          resolve(output);
+        }
+        function onProgress(event: any) {}
+      });
     });
-  });
+  }
 
   const serverDir = path.join(process.cwd(), ".data", "servers", serverData.id);
   await fs.ensureDir(serverDir);

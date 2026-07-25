@@ -61,7 +61,11 @@ export default function ServerList() {
         {servers.map(server => (
           <motion.div variants={itemAnim} key={server.id} className="bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 p-5 md:p-6 flex flex-col group hover:bg-black/60 transition-all shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)] ring-1 ring-white/5 relative overflow-hidden">
             {/* Subtle top glow based on status */}
-            <div className={`absolute top-0 left-0 right-0 h-[2px] opacity-70 ${server.status === 'online' ? 'bg-gradient-to-r from-transparent via-emerald-500 to-transparent shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-gradient-to-r from-transparent via-zinc-500 to-transparent'}`} />
+                    <div className={`absolute top-0 left-0 right-0 h-[2px] opacity-70 ${
+              server.status === 'online' ? 'bg-gradient-to-r from-transparent via-emerald-500 to-transparent shadow-[0_0_15px_rgba(16,185,129,0.5)]' :
+              server.status === 'installing' || server.status === 'starting' ? 'bg-gradient-to-r from-transparent via-cyan-500 to-transparent shadow-[0_0_15px_rgba(6,182,212,0.5)]' :
+              'bg-gradient-to-r from-transparent via-zinc-500 to-transparent'
+            }`} />
             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
             
             <Link to={`/servers/${server.id}`} className="block flex-1 z-10 relative">
@@ -76,9 +80,22 @@ export default function ServerList() {
                     <div className="flex items-center mt-1.5 space-x-2">
                        <span className="flex h-2.5 w-2.5 relative">
                           {server.status === 'online' && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-                          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${server.status === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-zinc-600'}`}></span>
+                          <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                          server.status === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' :
+                          server.status === 'installing' || server.status === 'starting' ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'bg-zinc-600'
+                        }`}></span>
                         </span>
-                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{server.status}</span>
+                      <span className={`text-xs font-bold uppercase tracking-widest ${
+                          server.status === 'online' ? 'text-emerald-500' :
+                          server.status === 'installing' || server.status === 'starting' ? 'text-cyan-500' :
+                          'text-zinc-500'
+                        }`}>{
+                          server.status === 'installing' ? 'Installing' :
+                          server.status === 'starting' ? 'Starting' :
+                          server.status === 'stopping' ? 'Stopping' :
+                          server.status === 'crashed' || server.status === 'suspended' ? 'Stopped' :
+                          server.status === 'online' ? 'Online' : 'Offline'
+                        }</span>
                     </div>
                   </div>
                 </div>
