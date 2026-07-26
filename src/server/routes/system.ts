@@ -106,7 +106,7 @@ router.put("/settings", async (req, res) => {
   if(user.role !== "admin" && user.role !== "owner") return res.status(403).json({ error: "Forbidden"});
   const { panelName, panelLogo, panelBackgroundImage, panelBackgroundBlur, enablePlayit, enableTutorial, enableLoginAnimation } = req.body;
   const settings = await readJSON("settings.json") || {};
-  if (panelName !== undefined) settings.panelName = panelName || "Hemals Hosting Panal";
+  if (panelName !== undefined) settings.panelName = panelName || "Hemals Panal";
   if (panelLogo !== undefined) settings.panelLogo = panelLogo;
   if (panelBackgroundImage !== undefined) settings.panelBackgroundImage = panelBackgroundImage;
   if (panelBackgroundBlur !== undefined) settings.panelBackgroundBlur = panelBackgroundBlur;

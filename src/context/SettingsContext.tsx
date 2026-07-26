@@ -4,8 +4,8 @@ import axios from "axios";
 export const SettingsContext = createContext<any>(null);
 
 export const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
-  const [panelName, setPanelName] = useState<string>("Hemals Hosting Panal");
-  const [panelLogo, setPanelLogo] = useState<string>("https://th.bing.com/th/id/OIG2.MSeH3MjZRxdN1lVl2W3R?w=1248&h=832&qlt=70&p=0&r=0&o=4&pid=ImgGn");
+  const [panelName, setPanelName] = useState<string>("Hemals Panal");
+  const [panelLogo, setPanelLogo] = useState<string>("");
   const [panelBackgroundImage, setPanelBackgroundImage] = useState<string>("");
   const [panelBackgroundBlur, setPanelBackgroundBlur] = useState<number>(10);
   const [enablePlayit, setEnablePlayit] = useState<boolean>(false);
