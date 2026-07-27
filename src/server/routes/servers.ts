@@ -66,6 +66,12 @@ router.get("/:id/files/download/:filename", async (req, res) => {
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found" });
   res.download(filePath, filename);
 });
+router.get("/:id/files/raw/:filename", async (req, res) => {
+  const { id, filename } = req.params;
+  const filePath = path.join(process.cwd(), ".data", "servers", id, filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File not found" });
+  res.sendFile(filePath);
+});
 
 // Backup endpoints
 router.get("/:id/backups", getBackups);
