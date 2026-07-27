@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { Package, Upload, Download, Trash2, Check, X, FileArchive, Image as ImageIcon, Link, Globe } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Package, Upload, Trash2, Check, X, FileArchive, Image as ImageIcon, Link, ToggleLeft, ToggleRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 const formatSize = (bytes: number) => {
   if (!bytes || bytes === 0) return "0 B";
@@ -18,45 +18,41 @@ export default function ResourcePackManager({ serverId }: { serverId: string }) 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [currentPackUrl, setCurrentPackUrl] = useState("");
+  const [requirePack, setRequirePack] = useState(false);
   const [packIcon, setPackIcon] = useState<string | null>(null);
-  const [packInfo, setPackInfo] = useState<{ name?: string; description?: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchPacks = async () => {
+  const fetchProps = async () => {
     setLoading(true);
     try {
       const res = await axios.get(`/api/servers/${serverId}/files?path=/`);
       const items = res.data.isFile ? [] : (res.data || []);
       const zipPacks = items.filter((f: any) => !f.isDirectory && f.name.endsWith(".zip"));
       setPacks(zipPacks);
-    } catch { setPacks([]); }
 
-    try {
-      const propsRes = await axios.get(`/api/servers/${serverId}/files?path=/server.properties`);
-      if (propsRes.data.isFile && propsRes.data.content) {
-        const match = propsRes.data.content.match(/^resource-pack=(.*)$/m);
-        if (match) setCurrentPackUrl(match[1].trim());
-      }
-    } catch {}
-    setLoading(false);
-  };
-
-  const fetchPackInfo = async () => {
-    try {
-      const res = await axios.get(`/api/servers/${serverId}/files?path=/`);
-      const items = res.data.isFile ? [] : (res.data || []);
       const iconFile = items.find((f: any) => f.name === "pack.png");
       if (iconFile) {
         setPackIcon(`/api/servers/${serverId}/files/raw/pack.png?t=${Date.now()}`);
       } else {
         setPackIcon(null);
       }
-    } catch { setPackIcon(null); }
+    } catch { setPacks([]); }
+
+    try {
+      const propsRes = await axios.get(`/api/servers/${serverId}/files?path=/server.properties`);
+      if (propsRes.data.isFile && propsRes.data.content) {
+        const c = propsRes.data.content;
+        const urlMatch = c.match(/^resource-pack=(.*)$/m);
+        if (urlMatch) setCurrentPackUrl(urlMatch[1].trim());
+        const reqMatch = c.match(/^require-resource-pack=(.*)$/m);
+        if (reqMatch) setRequirePack(reqMatch[1].trim() === "true");
+      }
+    } catch {}
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchPacks();
-    fetchPackInfo();
+    fetchProps();
   }, [serverId]);
 
   const showMessage = (type: "success" | "error", text: string) => {
@@ -82,7 +78,7 @@ export default function ResourcePackManager({ serverId }: { serverId: string }) 
         },
       });
       showMessage("success", `"${file.name}" uploaded.`);
-      await fetchPacks();
+      await fetchProps();
     } catch (e: any) {
       showMessage("error", e.response?.data?.error || "Upload failed");
     }
@@ -94,12 +90,11 @@ export default function ResourcePackManager({ serverId }: { serverId: string }) 
     try {
       const propsRes = await axios.get(`/api/servers/${serverId}/files?path=/server.properties`);
       let content = propsRes.data.isFile ? propsRes.data.content : "";
-      const urlMatch = content.match(/^resource-pack=.*$/m);
       const packUrl = `/api/servers/${serverId}/files/download/${encodeURIComponent(filename)}`;
-      if (urlMatch) {
+      if (content.match(/^resource-pack=.*$/m)) {
         content = content.replace(/^resource-pack=.*$/m, `resource-pack=${packUrl}`);
       } else {
-        content += `\nresource-pack=${packUrl}\n`;
+        content += `\nresource-pack=${packUrl}`;
       }
       await axios.post(`/api/servers/${serverId}/files/save`, {
         filePath: "/server.properties",
@@ -117,15 +112,38 @@ export default function ResourcePackManager({ serverId }: { serverId: string }) 
       const propsRes = await axios.get(`/api/servers/${serverId}/files?path=/server.properties`);
       let content = propsRes.data.isFile ? propsRes.data.content : "";
       content = content.replace(/^resource-pack=.*$/m, "");
+      content = content.replace(/^require-resource-pack=.*$/m, "");
       content = content.replace(/^\n+/, "");
       await axios.post(`/api/servers/${serverId}/files/save`, {
         filePath: "/server.properties",
         content
       });
       setCurrentPackUrl("");
+      setRequirePack(false);
       showMessage("success", "Resource pack removed. Restart to apply.");
     } catch (e: any) {
       showMessage("error", "Failed to remove resource pack");
+    }
+  };
+
+  const toggleRequire = async () => {
+    try {
+      const propsRes = await axios.get(`/api/servers/${serverId}/files?path=/server.properties`);
+      let content = propsRes.data.isFile ? propsRes.data.content : "";
+      const newVal = !requirePack;
+      if (content.match(/^require-resource-pack=.*$/m)) {
+        content = content.replace(/^require-resource-pack=.*$/m, `require-resource-pack=${newVal}`);
+      } else {
+        content += `\nrequire-resource-pack=${newVal}`;
+      }
+      await axios.post(`/api/servers/${serverId}/files/save`, {
+        filePath: "/server.properties",
+        content
+      });
+      setRequirePack(newVal);
+      showMessage("success", `Require resource pack set to ${newVal}. Restart to apply.`);
+    } catch (e: any) {
+      showMessage("error", e.response?.data?.error || "Failed to toggle require pack");
     }
   };
 
@@ -134,7 +152,7 @@ export default function ResourcePackManager({ serverId }: { serverId: string }) 
     try {
       await axios.delete(`/api/servers/${serverId}/files`, { data: { path: `/${name}` } });
       showMessage("success", `Deleted "${name}".`);
-      await fetchPacks();
+      await fetchProps();
     } catch (e: any) {
       showMessage("error", e.response?.data?.error || "Delete failed");
     }
@@ -171,20 +189,43 @@ export default function ResourcePackManager({ serverId }: { serverId: string }) 
       </div>
 
       {currentPackUrl && (
-        <div className="mb-4 p-4 rounded-xl bg-white/[0.03] border border-cyan-500/20 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-black/40 flex items-center justify-center overflow-hidden shrink-0 border border-white/10">
-            {packIcon ? (
-              <img src={packIcon} alt="Pack Icon" className="w-full h-full object-cover" onError={() => setPackIcon(null)} />
+        <div className="mb-4 p-4 rounded-xl bg-white/[0.03] border border-cyan-500/20">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-black/40 flex items-center justify-center overflow-hidden shrink-0 border border-white/10">
+              {packIcon ? (
+                <img src={packIcon} alt="Pack Icon" className="w-full h-full object-cover" onError={() => setPackIcon(null)} />
+              ) : (
+                <ImageIcon size={20} className="text-zinc-500" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">Active Resource Pack</p>
+              <p className="text-xs text-zinc-400 font-mono truncate">{currentPackUrl}</p>
+            </div>
+            <button onClick={handleRemovePack} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors shrink-0" title="Remove Pack">
+              <Trash2 size={14} />
+            </button>
+          </div>
+          <button
+            onClick={toggleRequire}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-all"
+          >
+            {requirePack ? (
+              <ToggleRight className="w-6 h-6 text-emerald-400" />
             ) : (
-              <ImageIcon size={20} className="text-zinc-500" />
+              <ToggleLeft className="w-6 h-6 text-zinc-500" />
             )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">Active Resource Pack</p>
-            <p className="text-xs text-zinc-400 font-mono truncate">{currentPackUrl}</p>
-          </div>
-          <button onClick={handleRemovePack} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors shrink-0" title="Remove Pack">
-            <Trash2 size={14} />
+            <div className="text-left">
+              <p className="text-sm font-medium text-white">Require Resource Pack</p>
+              <p className="text-xs text-zinc-500">
+                {requirePack
+                  ? "Players must accept the pack to join"
+                  : "Players can choose to accept or decline"}
+              </p>
+            </div>
+            <span className={`ml-auto text-xs font-medium px-2 py-0.5 rounded-full ${requirePack ? "bg-emerald-500/10 text-emerald-400" : "bg-zinc-500/10 text-zinc-400"}`}>
+              {requirePack ? "ON" : "OFF"}
+            </span>
           </button>
         </div>
       )}
@@ -217,7 +258,7 @@ export default function ResourcePackManager({ serverId }: { serverId: string }) 
             </>
           )}
         </button>
-        <button onClick={fetchPacks} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 font-medium text-sm transition-all border border-white/10">
+        <button onClick={fetchProps} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 font-medium text-sm transition-all border border-white/10">
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
           </svg>
@@ -262,9 +303,13 @@ export default function ResourcePackManager({ serverId }: { serverId: string }) 
                   </div>
                 </div>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => handleActivate(pack.name)} className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 transition-colors" title="Set as Active">
-                    <Link size={14} />
-                  </button>
+                  {currentPackUrl.includes(encodeURIComponent(pack.name)) ? (
+                    <span className="px-2 py-1 text-[10px] font-medium bg-emerald-500/10 text-emerald-400 rounded-md">ACTIVE</span>
+                  ) : (
+                    <button onClick={() => handleActivate(pack.name)} className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 transition-colors" title="Set as Active">
+                      <Link size={14} />
+                    </button>
+                  )}
                   <button onClick={() => handleDelete(pack.name)} className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors" title="Delete">
                     <Trash2 size={14} />
                   </button>

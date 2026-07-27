@@ -6,8 +6,25 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const EXTENSIONS = [".txt", ".json", ".yml", ".yaml", ".properties", ".log", ".xml", ".toml", ".cfg", ".conf", ".ini", ".sh", ".bat", ".env", ".md"];
 
+const SYNTAX_STYLES = {
+  comment: "text-emerald-500/70 italic",
+  key: "text-cyan-300",
+  string: "text-amber-200",
+  number: "text-purple-300",
+  boolean: "text-pink-400",
+  section: "text-orange-300 font-bold",
+  operator: "text-zinc-500",
+  tag: "text-blue-300",
+  punctuation: "text-zinc-400",
+};
+
 function highlightSyntax(code: string, fileName: string): React.ReactNode[] {
   const ext = fileName.split(".").pop()?.toLowerCase();
+  if (!ext || !["json", "yml", "yaml", "properties", "toml", "cfg", "conf", "ini", "xml", "sh", "bat"].includes(ext)) {
+    return code.split("\n").map((line, i) => (
+      <div key={i} className="whitespace-pre">{line}</div>
+    ));
+  }
   const lines = code.split("\n");
   return lines.map((line, i) => {
     let tokens: React.ReactNode[] = [];
@@ -15,73 +32,132 @@ function highlightSyntax(code: string, fileName: string): React.ReactNode[] {
       const parts = line.split(/(".*?"\s*:)/g);
       parts.forEach((part, j) => {
         if (part.match(/^".*?"\s*:$/)) {
-          tokens.push(<span key={j} className="text-blue-300">{part}</span>);
+          const keyMatch = part.match(/^(".*?")(\s*:)$/);
+          if (keyMatch) {
+            tokens.push(<span key={`k${j}`} className={SYNTAX_STYLES.string}>{keyMatch[1]}</span>);
+            tokens.push(<span key={`o${j}`} className={SYNTAX_STYLES.operator}>{keyMatch[2]}</span>);
+          } else {
+            tokens.push(<span key={j} className={SYNTAX_STYLES.string}>{part}</span>);
+          }
         } else if (part.match(/^".*?"$/)) {
-          tokens.push(<span key={j} className="text-emerald-300">{part}</span>);
+          tokens.push(<span key={j} className={SYNTAX_STYLES.string}>{part}</span>);
         } else {
-          const numParts = part.split(/(\b\d+\.?\d*\b)/g);
-          numParts.forEach((np, k) => {
-            if (/^\d+\.?\d*$/.test(np)) {
-              tokens.push(<span key={`${j}-${k}`} className="text-amber-300">{np}</span>);
+          const segments = part.split(/(\b\d+\.?\d*\b|true|false|null)/g);
+          segments.forEach((seg, k) => {
+            if (seg === "true" || seg === "false" || seg === "null") {
+              tokens.push(<span key={`b${j}-${k}`} className={SYNTAX_STYLES.boolean}>{seg}</span>);
+            } else if (/^\d+\.?\d*$/.test(seg)) {
+              tokens.push(<span key={`n${j}-${k}`} className={SYNTAX_STYLES.number}>{seg}</span>);
             } else {
-              const boolParts = np.split(/\b(true|false|null)\b/g);
-              boolParts.forEach((bp, l) => {
-                if (/^(true|false|null)$/.test(bp)) {
-                  tokens.push(<span key={`${j}-${k}-${l}`} className="text-purple-300">{bp}</span>);
-                } else {
-                  tokens.push(bp);
-                }
-              });
+              tokens.push(seg);
             }
           });
         }
       });
     } else if (ext === "yml" || ext === "yaml") {
       if (line.match(/^\s*#/)) {
-        tokens.push(<span key={0} className="text-zinc-500 italic">{line}</span>);
+        tokens.push(<span key={0} className={SYNTAX_STYLES.comment}>{line}</span>);
       } else {
-        const parts = line.split(/(:.*)/);
-        parts.forEach((part, j) => {
-          if (j === 0 && part.trim()) {
-            tokens.push(<span key={j} className="text-cyan-300">{part}</span>);
-          } else if (part.startsWith(":")) {
-            const valParts = part.split(/(#.*)/);
-            valParts.forEach((vp, k) => {
-              if (vp.startsWith("#")) {
-                tokens.push(<span key={`${j}-${k}`} className="text-zinc-500 italic">{vp}</span>);
+        const hashIdx = line.indexOf(" #");
+        const contentPart = hashIdx >= 0 ? line.substring(0, hashIdx) : line;
+        const commentPart = hashIdx >= 0 ? line.substring(hashIdx) : null;
+        if (line.includes(":")) {
+          const parts = contentPart.split(/(:)/);
+          parts.forEach((part, j) => {
+            if (part === ":") {
+              tokens.push(<span key={`o${j}`} className={SYNTAX_STYLES.operator}>{part}</span>);
+            } else if (j === 0 && part.trim()) {
+              tokens.push(<span key={`k${j}`} className={SYNTAX_STYLES.key}>{part}</span>);
+            } else {
+              const trimmed = part.trim();
+              if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+                tokens.push(<span key={`s${j}`} className={SYNTAX_STYLES.string}>{part}</span>);
+              } else if (/^\d+\.?\d*$/.test(trimmed)) {
+                tokens.push(<span key={`n${j}`} className={SYNTAX_STYLES.number}>{part}</span>);
+              } else if (trimmed === "true" || trimmed === "false" || trimmed === "null") {
+                tokens.push(<span key={`b${j}`} className={SYNTAX_STYLES.boolean}>{part}</span>);
               } else {
-                const strMatch = vp.match(/(["'])(.*?)\1/);
-                if (strMatch) {
-                  const before = vp.substring(0, vp.indexOf(strMatch[0]));
-                  if (before) tokens.push(<span key={`${j}-${k}-b`}>{before}</span>);
-                  tokens.push(<span key={`${j}-${k}-s`} className="text-emerald-300">{strMatch[0]}</span>);
-                  const after = vp.substring(vp.indexOf(strMatch[0]) + strMatch[0].length);
-                  if (after) tokens.push(<span key={`${j}-${k}-a`}>{after}</span>);
-                } else {
-                  tokens.push(vp);
-                }
+                tokens.push(part);
               }
-            });
-          } else {
-            tokens.push(part);
-          }
-        });
+            }
+          });
+        } else {
+          tokens.push(contentPart);
+        }
+        if (commentPart) {
+          tokens.push(<span key="c" className={SYNTAX_STYLES.comment}>{commentPart}</span>);
+        }
       }
     } else if (ext === "properties") {
       if (line.startsWith("#") || line.startsWith("!")) {
-        tokens.push(<span key={0} className="text-zinc-500 italic">{line}</span>);
+        tokens.push(<span key={0} className={SYNTAX_STYLES.comment}>{line}</span>);
       } else if (line.includes("=")) {
         const eqIdx = line.indexOf("=");
-        tokens.push(<span key={0} className="text-cyan-300">{line.substring(0, eqIdx)}</span>);
-        tokens.push(<span key={1} className="text-zinc-500">=</span>);
-        tokens.push(<span key={2} className="text-emerald-300">{line.substring(eqIdx + 1)}</span>);
+        tokens.push(<span key="k" className={SYNTAX_STYLES.key}>{line.substring(0, eqIdx)}</span>);
+        tokens.push(<span key="o" className={SYNTAX_STYLES.operator}>=</span>);
+        const val = line.substring(eqIdx + 1);
+        if (val === "true" || val === "false") {
+          tokens.push(<span key="v" className={SYNTAX_STYLES.boolean}>{val}</span>);
+        } else if (/^\d+\.?\d*$/.test(val.trim())) {
+          tokens.push(<span key="v" className={SYNTAX_STYLES.number}>{val}</span>);
+        } else {
+          tokens.push(<span key="v" className={SYNTAX_STYLES.string}>{val}</span>);
+        }
       } else {
         tokens.push(line);
+      }
+    } else if (["toml", "cfg", "conf", "ini"].includes(ext || "")) {
+      if (line.match(/^\s*[;#]/)) {
+        tokens.push(<span key={0} className={SYNTAX_STYLES.comment}>{line}</span>);
+      } else if (line.match(/^\[.*\]\s*$/)) {
+        tokens.push(<span key={0} className={SYNTAX_STYLES.section}>{line}</span>);
+      } else if (line.includes("=")) {
+        const eqIdx = line.indexOf("=");
+        tokens.push(<span key="k" className={SYNTAX_STYLES.key}>{line.substring(0, eqIdx)}</span>);
+        tokens.push(<span key="o" className={SYNTAX_STYLES.operator}>=</span>);
+        let val = line.substring(eqIdx + 1);
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          tokens.push(<span key="v" className={SYNTAX_STYLES.string}>{val}</span>);
+        } else if (val === "true" || val === "false") {
+          tokens.push(<span key="v" className={SYNTAX_STYLES.boolean}>{val}</span>);
+        } else if (/^\d+\.?\d*$/.test(val.trim())) {
+          tokens.push(<span key="v" className={SYNTAX_STYLES.number}>{val}</span>);
+        } else {
+          tokens.push(val);
+        }
+      } else {
+        tokens.push(line);
+      }
+    } else if (ext === "xml") {
+      const tagParts = line.split(/(<\/?[a-zA-Z0-9_-]+\b[^>]*\/?>)/g);
+      tagParts.forEach((part, j) => {
+        if (part.startsWith("<") && (part.endsWith(">") || part.endsWith("/>"))) {
+          tokens.push(<span key={j} className={SYNTAX_STYLES.tag}>{part}</span>);
+        } else if (part.includes("=")) {
+          const eqIdx = part.indexOf("=");
+          tokens.push(<span key={`k${j}`} className={SYNTAX_STYLES.key}>{part.substring(0, eqIdx)}</span>);
+          tokens.push(<span key={`o${j}`} className={SYNTAX_STYLES.operator}>=</span>);
+          tokens.push(<span key={`v${j}`} className={SYNTAX_STYLES.string}>{part.substring(eqIdx + 1)}</span>);
+        } else {
+          tokens.push(part);
+        }
+      });
+    } else if (ext === "sh" || ext === "bat") {
+      if (line.trim().startsWith("#") || line.trim().startsWith("::") || line.trim().startsWith("REM")) {
+        tokens.push(<span key={0} className={SYNTAX_STYLES.comment}>{line}</span>);
+      } else {
+        const cmdMatch = line.match(/^(\s*[a-zA-Z0-9_-]+)/);
+        if (cmdMatch) {
+          tokens.push(<span key="cmd" className="text-yellow-300">{cmdMatch[1]}</span>);
+          tokens.push(line.substring(cmdMatch[1].length));
+        } else {
+          tokens.push(line);
+        }
       }
     } else {
       tokens.push(line);
     }
-    return <div key={i} className="whitespace-pre">{tokens}</div>;
+    return <div key={i} className="whitespace-pre" style={{ height: "21px" }}>{tokens}</div>;
   });
 }
 
@@ -108,6 +184,7 @@ export default function FileManager({ serverId }: { serverId: string }) {
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const findInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const gutterRef = useRef<HTMLDivElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const uploadFiles = async (files: FileList | File[]) => {
@@ -440,6 +517,12 @@ export default function FileManager({ serverId }: { serverId: string }) {
     setFileContent(e.target.value);
   };
 
+  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (gutterRef.current) {
+      gutterRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
   const lineCount = fileContent.split("\n").length;
   const matches = getMatches();
 
@@ -599,27 +682,39 @@ export default function FileManager({ serverId }: { serverId: string }) {
                 </motion.div>
               )}
               <div className="flex-1 flex min-h-0 relative">
-                <div className="select-none text-right pr-3 py-4 text-gray-600 text-xs leading-[21px] font-mono border-r border-gray-800/50 mr-0 min-w-[3rem] overflow-hidden bg-gray-950/30">
+                <div
+                  ref={gutterRef}
+                  className="select-none text-right pr-3 py-4 text-gray-600 text-xs leading-[21px] font-mono border-r border-gray-800/50 mr-0 min-w-[3rem] overflow-hidden bg-gray-950/30"
+                  style={{ lineHeight: "21px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", fontSize: "13px" }}
+                >
                   {Array.from({ length: Math.max(lineCount, 1) }, (_, i) => (
-                    <div key={i} className="pr-1">{i + 1}</div>
+                    <div key={i} className="pr-1" style={{ height: "21px" }}>{i + 1}</div>
                   ))}
                 </div>
-                <div className="flex-1 relative">
-                  <div className="absolute inset-0 p-4 text-gray-200 font-mono text-sm leading-[21px] whitespace-pre-wrap break-all pointer-events-none z-0 overflow-hidden">
+                <div className="flex-1 relative overflow-hidden">
+                  <div
+                    className="absolute inset-0 p-4 text-gray-200 font-mono text-sm leading-[21px] whitespace-pre overflow-auto pointer-events-none z-0"
+                    style={{ lineHeight: "21px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", fontSize: "13px", whiteSpace: "pre", overflow: "hidden" }}
+                    aria-hidden="true"
+                  >
                     {highlightSyntax(fileContent, editingFile || "")}
                   </div>
                   <textarea
                     ref={editorRef}
                     value={fileContent}
                     onChange={handleTextareaChange}
-                    className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white font-mono text-sm leading-[21px] focus:outline-none resize-none custom-scrollbar min-h-0 p-4 z-10"
-                    spellCheck={false}
-                    onScroll={(e) => {
-                      const lineGutter = e.currentTarget.parentElement?.previousElementSibling;
-                      if (lineGutter) {
-                        lineGutter.scrollTop = e.currentTarget.scrollTop;
-                      }
+                    onScroll={handleScroll}
+                    className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white font-mono text-sm resize-none custom-scrollbar min-h-0 p-4 z-10"
+                    style={{
+                      lineHeight: "21px",
+                      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                      fontSize: "13px",
+                      whiteSpace: "pre",
+                      overflow: "auto",
+                      wordBreak: "normal",
+                      overflowWrap: "normal",
                     }}
+                    spellCheck={false}
                   />
                 </div>
               </div>
