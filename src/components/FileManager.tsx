@@ -185,6 +185,7 @@ export default function FileManager({ serverId }: { serverId: string }) {
   const findInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
+  const highlightRef = useRef<HTMLDivElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const uploadFiles = async (files: FileList | File[]) => {
@@ -518,8 +519,12 @@ export default function FileManager({ serverId }: { serverId: string }) {
   };
 
   const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    const st = e.currentTarget.scrollTop;
     if (gutterRef.current) {
-      gutterRef.current.scrollTop = e.currentTarget.scrollTop;
+      gutterRef.current.scrollTop = st;
+    }
+    if (highlightRef.current) {
+      highlightRef.current.style.transform = `translateY(-${st}px)`;
     }
   };
 
@@ -693,26 +698,37 @@ export default function FileManager({ serverId }: { serverId: string }) {
                 </div>
                 <div className="flex-1 relative overflow-hidden">
                   <div
-                    className="absolute inset-0 p-4 text-gray-200 font-mono text-sm leading-[21px] whitespace-pre overflow-auto pointer-events-none z-0"
-                    style={{ lineHeight: "21px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", fontSize: "13px", whiteSpace: "pre", overflow: "hidden" }}
+                    className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
                     aria-hidden="true"
                   >
-                    {highlightSyntax(fileContent, editingFile || "")}
+                    <div
+                      ref={highlightRef}
+                      className="p-4"
+                      style={{
+                        fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                        fontSize: "13px",
+                        lineHeight: "21px",
+                        whiteSpace: "pre",
+                        color: "#e4e4e7",
+                        willChange: "transform",
+                      }}
+                    >
+                      {highlightSyntax(fileContent, editingFile || "")}
+                    </div>
                   </div>
                   <textarea
                     ref={editorRef}
                     value={fileContent}
                     onChange={handleTextareaChange}
                     onScroll={handleScroll}
-                    className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white font-mono text-sm resize-none custom-scrollbar min-h-0 p-4 z-10"
+                    className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white resize-none custom-scrollbar z-10"
                     style={{
-                      lineHeight: "21px",
                       fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                       fontSize: "13px",
+                      lineHeight: "21px",
                       whiteSpace: "pre",
                       overflow: "auto",
-                      wordBreak: "normal",
-                      overflowWrap: "normal",
+                      padding: "1rem",
                     }}
                     spellCheck={false}
                   />
