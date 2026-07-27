@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { LoadingOverlay } from "../components/LoadingOverlay";
 import { useParams, Link, Routes, Route, useLocation } from "react-router-dom";
 import axios from "axios";
-import { Terminal, Folder, Play, Square, RefreshCw, ArrowLeft, Sliders, Archive, AlertTriangle, Copy, Check, Menu, X, Users, LogOut } from "lucide-react";
+import { Terminal, Folder, Play, Square, RefreshCw, ArrowLeft, Sliders, Archive, AlertTriangle, Copy, Check, Menu, X, Users, LogOut, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSettings } from "../context/SettingsContext";
+import { playStartup, playShutdown, playRestart, playSuccess, playError } from "../utils/sounds";
 
 import ServerConsole from "../components/ServerConsole";
 import FileManager from "../components/FileManager";
@@ -57,12 +59,23 @@ export default function ServerView() {
     return () => clearInterval(interval);
   }, [id]);
 
+  const [enableSounds, setEnableSounds] = useState(true);
+  const { panelName } = useSettings();
+
   const executeAction = async (action: string) => {
     setIsProcessing(true);
     try {
        await axios.post(`/api/servers/${id}/${action}`);
        await fetchServer();
-    } catch(e) {} finally {
+       if (enableSounds) {
+         if (action === 'start') playStartup();
+         else if (action === 'stop') playShutdown();
+         else if (action === 'restart') playRestart();
+         else playSuccess();
+       }
+    } catch(e) {
+       if (enableSounds) playError();
+    } finally {
        setIsProcessing(false);
     }
   };
@@ -302,7 +315,16 @@ export default function ServerView() {
                }</span>
              </div>
                 
-             <div className="flex items-center space-x-1 sm:space-x-2 shrink-0 ml-auto md:ml-1">
+              <div className="flex items-center space-x-1 sm:space-x-2 shrink-0 ml-auto md:ml-1">
+                 <button
+                   onClick={() => setEnableSounds(!enableSounds)}
+                   className={`p-1.5 rounded-lg transition-all border ${
+                     enableSounds ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400' : 'bg-white/[0.03] border-white/5 text-zinc-500'
+                   }`}
+                   title={enableSounds ? "Sounds On" : "Sounds Off"}
+                 >
+                   {enableSounds ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                 </button>
                 {server.status !== 'online' ? (
                   <button disabled={isProcessing} onClick={() => handleAction('start')} className="p-1.5 sm:px-3 sm:py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-500 font-semibold rounded-lg transition-all border border-cyan-500/20 flex items-center justify-center text-xs shadow-sm disabled:opacity-50">
                     {isProcessing ? <div className="w-3.5 h-3.5 border-2 border-cyan-500/50 border-t-cyan-500 rounded-full animate-spin sm:mr-1.5" /> : <Play className="w-3.5 h-3.5 sm:mr-1.5" />} <span className="hidden sm:block">Start</span>
