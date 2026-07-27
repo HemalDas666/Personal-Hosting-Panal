@@ -107,6 +107,60 @@ export default function FileManager({ serverId }: { serverId: string }) {
   const [matchCount, setMatchCount] = useState(0);
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const findInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const uploadFiles = async (files: FileList | File[]) => {
+    for (const file of Array.from(files)) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("path", path);
+      try {
+        setUploadProgress(0);
+        await axios.post(`/api/servers/${serverId}/files/upload`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(percentCompleted);
+            }
+          }
+        });
+      } catch (err) {
+        console.error("Upload failed", err);
+      }
+    }
+    setUploadProgress(null);
+    fetchFiles();
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (e.dataTransfer.files.length > 0) {
+      await uploadFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      uploadFiles(e.target.files);
+    }
+    e.target.value = "";
+  };
 
   const getMatches = useCallback(() => {
     if (!findText || !fileContent) return [];
@@ -361,32 +415,6 @@ export default function FileManager({ serverId }: { serverId: string }) {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("path", path);
-    try {
-      setUploadProgress(0);
-      await axios.post(`/api/servers/${serverId}/files/upload`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(percentCompleted);
-          }
-        }
-      });
-      fetchFiles();
-    } catch (err) {
-      console.error("Upload failed", err);
-    } finally {
-      setUploadProgress(null);
-      e.target.value = "";
-    }
-  };
-
   const toggleSelectAll = () => {
     if (selectedFiles.size === filteredFiles.length) {
       setSelectedFiles(new Set());
@@ -414,10 +442,24 @@ export default function FileManager({ serverId }: { serverId: string }) {
 
   const lineCount = fileContent.split("\n").length;
   const matches = getMatches();
-  const currentMatchStart = matches.length > 0 ? matches[matchIndex] : -1;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden relative min-h-0 h-full w-full bg-transparent p-4 md:p-6">
+    <div
+      className="flex-1 flex flex-col overflow-hidden relative min-h-0 h-full w-full bg-transparent p-4 md:p-6"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" multiple />
+
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-cyan-500/10 backdrop-blur-sm border-2 border-dashed border-cyan-400/50 rounded-3xl pointer-events-none">
+          <div className="flex flex-col items-center gap-3 text-cyan-400">
+            <Upload size={48} className="opacity-80" />
+            <span className="text-lg font-bold">Drop files to upload</span>
+          </div>
+        </div>
+      )}
       <div className="p-4 md:p-6 mb-6 flex flex-col sm:flex-row items-center justify-between bg-black/40 backdrop-blur-xl rounded-3xl border border-white/10 shrink-0 gap-4 shadow-[0_0_40px_-15px_rgba(0,0,0,0.5)] ring-1 ring-white/5">
         <div className="flex items-center justify-between w-full sm:w-auto">
           <div className="flex items-center space-x-3">
@@ -436,10 +478,9 @@ export default function FileManager({ serverId }: { serverId: string }) {
                     <div className="w-4 h-4 rounded-full border-2 border-cyan-200 border-t-transparent animate-spin"></div>
                   </div>
                 ) : (
-                  <label className="flex items-center justify-center w-8 h-8 bg-cyan-600/90 hover:bg-cyan-500/90 rounded-lg text-white transition-colors cursor-pointer">
-                    <input type="file" onChange={handleFileUpload} className="hidden" />
-                    <Upload size={16} />
-                  </label>
+                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center w-8 h-8 bg-cyan-600/90 hover:bg-cyan-500/90 rounded-lg text-white transition-colors cursor-pointer">
+                      <Upload size={16} />
+                    </button>
                 )}
               </div>
             ) : (
@@ -471,10 +512,9 @@ export default function FileManager({ serverId }: { serverId: string }) {
                 <span>{uploadProgress === 100 ? "Processing..." : `${uploadProgress}%`}</span>
               </div>
             ) : (
-              <label className="flex items-center space-x-2 px-4 py-2.5 bg-cyan-600/90 hover:bg-cyan-500/90 rounded-full text-sm font-medium text-white transition-colors backdrop-blur-sm shadow-lg shadow-cyan-500/20 cursor-pointer">
-                <input type="file" onChange={handleFileUpload} className="hidden" />
+              <button onClick={() => fileInputRef.current?.click()} className="flex items-center space-x-2 px-4 py-2.5 bg-cyan-600/90 hover:bg-cyan-500/90 rounded-full text-sm font-medium text-white transition-colors backdrop-blur-sm shadow-lg shadow-cyan-500/20 cursor-pointer">
                 <Upload size={16} /> <span>Upload</span>
-              </label>
+              </button>
             )}
           </div>
         ) : (
