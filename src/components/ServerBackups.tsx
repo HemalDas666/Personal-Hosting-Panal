@@ -3,6 +3,7 @@ import { LoadingOverlay } from "../components/LoadingOverlay";
 import axios from "axios";
 import { Archive, Download, Trash2, RefreshCw, Plus, Clock, FileArchive, Upload } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 interface Backup {
   filename: string;
@@ -17,6 +18,7 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
+  const { addToast } = useToast();
 
   const fetchBackups = async () => {
     try {
@@ -40,7 +42,7 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
       await axios.post(`/api/servers/${serverId}/backups`);
       await fetchBackups();
     } catch (e) {
-      alert("Failed to create backup.");
+      addToast("error", "Failed to create backup.");
       console.error(e);
     } finally {
       setIsCreating(false);
@@ -51,9 +53,10 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
     if (!confirm("Are you sure you want to delete this backup?")) return;
     try {
       await axios.delete(`/api/servers/${serverId}/backups/${filename}`);
+      addToast("success", `Backup "${filename}" deleted.`);
       fetchBackups();
     } catch (e) {
-      alert("Failed to delete backup.");
+      addToast("error", "Failed to delete backup.");
     }
   };
 
@@ -69,14 +72,15 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      addToast("success", "Download started.");
     } catch (e) {
-      alert("Failed to download.");
+      addToast("error", "Failed to download.");
     }
   };
 
   const handleUpload = async (file: File) => {
     if (!file.name.endsWith(".zip")) {
-      alert("Only .zip files are supported for backup upload.");
+      addToast("error", "Only .zip files are supported for backup upload.");
       return;
     }
     setUploading(true);
@@ -86,9 +90,10 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
       await axios.post(`/api/servers/${serverId}/backups/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      addToast("success", `Backup "${file.name}" uploaded.`);
       await fetchBackups();
     } catch (e: any) {
-      alert(e.response?.data?.error || "Upload failed");
+      addToast("error", e.response?.data?.error || "Upload failed");
     }
     setUploading(false);
   };

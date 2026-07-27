@@ -15,6 +15,7 @@ export default function ModManager({ serverId }: { serverId: string }) {
   const [mods, setMods] = useState<Mod[]>([]);
   const [loading, setLoading] = useState(false);
   const [isInstalling, setIsInstalling] = useState<string | null>(null);
+  const [installProgress, setInstallProgress] = useState(0);
   const [query, setQuery] = useState("");
 
   const searchMods = async (searchQuery: string = "jei") => {
@@ -62,14 +63,19 @@ export default function ModManager({ serverId }: { serverId: string }) {
     if (!confirm(`Are you sure you want to install ${mod.name}?`)) return;
     try {
       setIsInstalling(mod.id);
-      
+      setInstallProgress(0);
+      const interval = setInterval(() => {
+        setInstallProgress(prev => Math.min(prev + Math.random() * 15 + 5, 90));
+      }, 400);
       const res = await axios.post(`/api/servers/${serverId}/mods/install`, {
         pluginId: mod.id,
         pluginName: mod.name
       });
-      
-      alert(res.data.message || `${mod.name} installed successfully! Restart the server to apply changes.`);
+      clearInterval(interval);
+      setInstallProgress(100);
+      setTimeout(() => alert(res.data.message || `${mod.name} installed successfully! Restart the server to apply changes.`), 300);
     } catch (e: any) {
+      setInstallProgress(0);
       alert(e.response?.data?.error || "Failed to install mod.");
     } finally {
       setIsInstalling(null);
@@ -158,7 +164,15 @@ export default function ModManager({ serverId }: { serverId: string }) {
                     className="w-full md:w-auto px-4 py-2 bg-white/5 hover:bg-cyan-500/10 border border-white/10 hover:border-cyan-500/30 text-zinc-300 hover:text-cyan-400 rounded-lg text-sm font-medium transition-all flex items-center justify-center shrink-0 disabled:opacity-50"
                   >
                     {isInstalling === mod.id ? (
-                      <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Installing...</>
+                      <div className="flex flex-col items-center w-full md:w-auto gap-1">
+                        <div className="flex items-center">
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          <span>{Math.round(installProgress)}%</span>
+                        </div>
+                        <div className="w-full md:w-24 h-1 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full bg-cyan-500 rounded-full transition-all duration-300" style={{ width: `${installProgress}%` }} />
+                        </div>
+                      </div>
                     ) : (
                       <><Download className="w-4 h-4 mr-2" /> Install</>
                     )}
@@ -169,8 +183,6 @@ export default function ModManager({ serverId }: { serverId: string }) {
           </div>
         </div>
       </div>
-      
-      {isInstalling !== null && <LoadingOverlay message="Installing mod..." />}
     </div>
   );
 }

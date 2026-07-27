@@ -18,6 +18,7 @@ import NodesPage from "./pages/NodesPage";
 import Layout from "./components/Layout";
 import { motion, AnimatePresence } from "framer-motion";
 import { SettingsProvider, useSettings } from "./context/SettingsContext";
+import { ToastProvider } from "./context/ToastContext";
 import { GlobalBackground } from "./components/GlobalBackground";
 import { SystemUpdateListener } from "./components/SystemUpdateListener";
 import { TutorialOverlay } from "./components/TutorialOverlay";
@@ -107,12 +108,14 @@ export default function App() {
   return (
     <SettingsProvider>
       <AuthProvider>
-        <SystemUpdateListener />
-        <GlobalBackground />
-        <Router>
-          <AnimatedRoutes />
-          <TutorialManager />
-        </Router>
+        <ToastProvider>
+          <SystemUpdateListener />
+          <GlobalBackground />
+          <Router>
+            <AnimatedRoutes />
+            <TutorialManager />
+          </Router>
+        </ToastProvider>
       </AuthProvider>
     </SettingsProvider>
   );
