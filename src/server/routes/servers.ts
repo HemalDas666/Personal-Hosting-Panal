@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { requireAuth } from "../middleware/auth.js";
-import { getServers, createServer, getServer, deleteServer, startServer, stopServer, restartServer, changeServerVersion, getFiles, uploadFile, deleteFile, renameFile, saveFileContent, sendCommand, getServerStats, updateOwner, updateIpAlias, getBackups, createBackup, downloadBackup, deleteBackup, unzipFile, zipFiles, installPlugin, installMod } from "../controllers/servers.js";
+import { getServers, createServer, getServer, deleteServer, startServer, stopServer, restartServer, changeServerVersion, getFiles, uploadFile, deleteFile, renameFile, saveFileContent, sendCommand, getServerStats, updateOwner, updateIpAlias, getBackups, createBackup, downloadBackup, deleteBackup, uploadBackup, unzipFile, zipFiles, installPlugin, installMod } from "../controllers/servers.js";
 import multer from "multer";
 
 const router = express.Router();
@@ -70,6 +70,7 @@ router.get("/:id/files/download/:filename", async (req, res) => {
 // Backup endpoints
 router.get("/:id/backups", getBackups);
 router.post("/:id/backups", createBackup);
+router.post("/:id/backups/upload", upload.single("file"), uploadBackup);
 router.get("/:id/backups/:filename", downloadBackup);
 router.delete("/:id/backups/:filename", deleteBackup);
 

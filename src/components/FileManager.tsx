@@ -638,6 +638,18 @@ export default function FileManager({ serverId }: { serverId: string }) {
                     </div>
                     <div className="flex items-center space-x-2 md:space-x-4 pl-4 shrink-0">
                       {!f.isDirectory && <span className="hidden sm:block text-xs text-gray-400 w-16 text-right">{(f.size/1024).toFixed(1)} KB</span>}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRenamingFile(f.name);
+                          setNewName(f.name);
+                          setSelectedFiles(new Set());
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 bg-white/5 hover:bg-blue-500/20 rounded-lg text-zinc-400 hover:text-blue-400 transition-all"
+                        title="Rename"
+                      >
+                        <Edit2 size={13} />
+                      </button>
                     </div>
                   </div>
                 );

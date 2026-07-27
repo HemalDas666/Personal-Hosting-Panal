@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react"; 
+import React, { useEffect, useState, useRef } from "react";
 import { LoadingOverlay } from "../components/LoadingOverlay";
 import axios from "axios";
-import { Archive, Download, Trash2, RefreshCw, Plus, Clock, FileArchive } from "lucide-react";
+import { Archive, Download, Trash2, RefreshCw, Plus, Clock, FileArchive, Upload } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 interface Backup {
@@ -14,6 +14,8 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
 
   const fetchBackups = async () => {
@@ -72,6 +74,25 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
     }
   };
 
+  const handleUpload = async (file: File) => {
+    if (!file.name.endsWith(".zip")) {
+      alert("Only .zip files are supported for backup upload.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      await axios.post(`/api/servers/${serverId}/backups/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      await fetchBackups();
+    } catch (e: any) {
+      alert(e.response?.data?.error || "Upload failed");
+    }
+    setUploading(false);
+  };
+
   const formatSize = (bytes: number) => {
     if (bytes === 0) return "0 B";
     const k = 1024;
@@ -87,31 +108,66 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div>
             <h2 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60 mb-1">Server Backups</h2>
-            <p className="text-sm text-zinc-400">Create, download, and manage your server archives.</p>
+            <p className="text-sm text-zinc-400">Create, download, upload, and manage your server archives.</p>
           </div>
         </div>
 
-        <div className="bg-white/[0.02] border border-white/5 p-5 md:p-6 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-lg shrink-0">
-              <FileArchive className="w-6 h-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white/[0.02] border border-white/5 p-5 md:p-6 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-lg shrink-0">
+                <FileArchive className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-0.5">Create Backup</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">Zip all server files into a backup.</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-white mb-0.5">Create Backup</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">All files on the server will be converted into a single zip file. This process may take some time depending on your server's size.</p>
-            </div>
+            <button 
+              onClick={handleCreateBackup}
+              disabled={isCreating}
+              className="w-full md:w-auto px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 border border-cyan-400/50 text-white font-medium rounded-lg transition-all shadow-lg flex items-center justify-center shrink-0 disabled:opacity-50"
+            >
+              {isCreating ? (
+                <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Zipping...</>
+              ) : (
+                <><Plus className="w-4 h-4 mr-2" /> Create</>
+              )}
+            </button>
           </div>
-          <button 
-            onClick={handleCreateBackup}
-            disabled={isCreating}
-            className="w-full md:w-auto px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 border border-cyan-400/50 text-white font-medium rounded-lg transition-all shadow-lg flex items-center justify-center shrink-0 disabled:opacity-50"
-          >
-            {isCreating ? (
-              <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Zipping files...</>
-            ) : (
-              <><Plus className="w-4 h-4 mr-2" /> Create Backup</>
-            )}
-          </button>
+
+          <div className="bg-white/[0.02] border border-white/5 p-5 md:p-6 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="p-3 bg-purple-500/10 text-purple-400 rounded-lg shrink-0">
+                <Upload className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-0.5">Upload Backup</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">Restore a .zip backup file.</p>
+              </div>
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".zip"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleUpload(e.target.files[0]);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+              }}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="w-full md:w-auto px-5 py-2.5 bg-purple-500 hover:bg-purple-600 border border-purple-400/50 text-white font-medium rounded-lg transition-all shadow-lg flex items-center justify-center shrink-0 disabled:opacity-50"
+            >
+              {uploading ? (
+                <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Uploading...</>
+              ) : (
+                <><Upload className="w-4 h-4 mr-2" /> Upload</>
+              )}
+            </button>
+          </div>
         </div>
 
         <div>
@@ -128,7 +184,7 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
               <div className="p-12 text-center flex flex-col items-center justify-center">
                 <Archive className="w-12 h-12 text-zinc-600 mb-4 opacity-50" />
                 <h4 className="text-zinc-300 font-medium mb-1">No backups found</h4>
-                <p className="text-zinc-500 text-sm">Create a backup above to secure your files.</p>
+                <p className="text-zinc-500 text-sm">Create or upload a backup above.</p>
               </div>
             ) : (
               <div className="divide-y divide-white/5">
@@ -171,7 +227,7 @@ export default function ServerBackups({ serverId }: { serverId: string }) {
         </div>
 
       </div>
-          {(isCreating) && <LoadingOverlay />}
+      {(isCreating || uploading) && <LoadingOverlay />}
     </div>
   );
 }

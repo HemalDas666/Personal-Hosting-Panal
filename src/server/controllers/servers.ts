@@ -620,6 +620,32 @@ export const deleteBackup = async (req: Request, res: Response) => {
     res.status(500).json({ error: e.message });
   }
 };
+
+export const uploadBackup = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const backupsDir = path.join(process.cwd(), ".data", "backups", id);
+  await fs.ensureDir(backupsDir);
+
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  const filename = file.originalname;
+  const destPath = path.join(backupsDir, filename);
+
+  if (!destPath.startsWith(backupsDir)) {
+    return res.status(403).json({ error: "Invalid path" });
+  }
+
+  try {
+    await fs.move(file.path, destPath, { overwrite: true });
+    res.json({ success: true, filename });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
 export const installPlugin = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { source, pluginId, pluginName } = req.body;
